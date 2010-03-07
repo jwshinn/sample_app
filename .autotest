@@ -1,0 +1,55 @@
+#!/bin/ruby
+require 'redgreen'
+require 'autotest/timestamp'
+ 
+module Autotest::GnomeNotify
+  def self.notify title, msg, img
+    system "notify-send '#{title}' '#{msg}' -i #{img} -t 3000"
+  end
+ 
+  Autotest.add_hook :ran_command do |at|
+    image_root = "~/.autotest_images" 
+    results = [at.results].flatten.join("\n")
+    results.gsub!(/\\e\[\d+m/,'')
+    output = results.slice(/(\d+)\sexamples?,\s(\d+)\sfailures?/)
+    puts output.inspect
+    if output
+      if $~[2].to_i > 0
+        notify "FAIL", "#{output}", "#{image_root}/fail.png"
+      else
+        notify "Pass", "#{output}", "#{image_root}/pass.png" 
+      end
+    end
+  end
+ 
+end
+
+Autotest.add_hook :initialize do |autotest|
+  autotest.add_mapping(/^spec\/integration\/.*_spec\.rb$/) do
+    autotest.files_matching(/^spec\/integration\/.*_spec\.rb$/)
+  end  
+end
+
+# -*- ruby -*-
+
+#require 'autotest/restart'
+
+# Autotest.add_hook :initialize do |at|
+#   at.extra_files << "../some/external/dependency.rb"
+#
+#   at.libs << ":../some/external"
+#
+#   at.add_exception 'vendor'
+#
+#   at.add_mapping(/dependency.rb/) do |f, _|
+#     at.files_matching(/test_.*rb$/)
+#   end
+#
+#   %w(TestA TestB).each do |klass|
+#     at.extra_class_map[klass] = "test/test_misc.rb"
+#   end
+# end
+
+# Autotest.add_hook :run_command do |at|
+#   system "rake build"
+# end
